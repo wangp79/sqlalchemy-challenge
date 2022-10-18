@@ -1,8 +1,11 @@
+from datetime import datetime
+from symbol import small_stmt
 from flask import Flask, jsonify
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 import pandas as pd
+from sqlalchemy import DateTime
 
 from sqlalchemy import create_engine, func
 from sqlalchemy import Column, Integer, String, Float
@@ -53,13 +56,19 @@ def stations():
 # Query the dates and temperature observations of the most active station for the last year of data.
 @app.route("/api/v1.0/tobs")
 def tobs():
-    selector = pd.DataFrame(session.query(
-        measurement.station).all()).value_counts().nlargest(1)
-    dates = pd.DataFrame(session.query(measurement.date, measurement.station, measurement.prcp).filter(
-        (measurement.date > '2016-08-23') & (measurement.date < '2017-07-10')).all()).set_index('station').loc['USC00519281']
-    result = dates.to_json(orient='values')
+   
+    dates = session.query(measurement.date, measurement.station, measurement.prcp).filter((measurement.date>'2016-08-23') &
+         (measurement.station=='USC00519281')).all()
+    tob_list = []
+    for dateqry in dates:
+        tob_dict={
+            'date': dateqry.date,
+            'station': dateqry.station,
+            'precip': dateqry.prcp
+        }
+        tob_list.append(tob_dict)
 
-    return (result)
+    return jsonify(tob_list)
 
 
 @app.route('/<start>')
